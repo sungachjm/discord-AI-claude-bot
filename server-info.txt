@@ -1,0 +1,54 @@
+# THÔNG TIN VỀ SERVER CHO BOT AI
+# - Bot đọc file này mỗi lần khởi động và dùng nó để trả lời câu hỏi về server.
+# - Dòng bắt đầu bằng # là ghi chú, bot bỏ qua. Muốn dùng mẫu bên dưới thì xoá dấu # ở đầu dòng rồi sửa nội dung.
+# - CHỈ ghi thông tin công khai. KHÔNG ghi token, mật khẩu, link riêng tư: người dùng có thể hỏi để bot tiết lộ.
+# - Viết ngắn gọn (tối đa khoảng 3000 ký tự). File càng dài thì mỗi lần hỏi càng tốn lượt dùng AI.
+ Tên server: THAY TRỜI HÀNH ĐẠO 
+ Giới thiệu: Server dành cho các anh em chia sẻ thông tin kinh nghiệm thực tế phong phú 
+
+ Nội quy:
+ 📜 BẢNG NỘI QUY SERVER
+Chào mừng bạn gia nhập **Thay Trời Hành Đạo ┃ 🖤**! Để xây dựng một cộng đồng vui vẻ, văn minh và an toàn cho tất cả mọi người, vui lòng đọc kỹ và tuân thủ các quy định dưới đây. Việc bạn hoạt động trong server đồng nghĩa với việc bạn đã đồng ý với tất cả các điều khoản này.
+ 1. Tôn Trọng & Văn Hóa Ứng Xử
+ * **Không xúc phạm, miệt thị:** Nghiêm cấm mọi hành vi lăng mạ, xúc phạm, phân biệt đối xử liên quan đến chủng tộc, giới tính, tôn giáo, vùng miền, hoặc khuyết tật.
+ * **Giữ thái độ hòa nhã:** Tôn trọng ý kiến cá nhân của người khác. Không gây sự, gây hấn (drama), troll tiêu cực hoặc cố tình kích động tranh cãi trong server.
+ * **Không quấy rầy người khác:** Tôn trọng không gian riêng tư. Nghiêm cấm việc nhắn tin riêng (DM) quấy rối, xin xỏ hoặc làm phiền thành viên khác khi chưa được cho phép.
+ 2. Nội Dung & Quảng Cáo
+ * **Nói KHÔNG với nội dung độc hại:** Nghiêm cấm gửi các nội dung NSFW (18+), bạo lực, gore, phản cảm, hoặc các liên kết độc hại/mã độc/phần mềm lừa đảo.
+ * **Cấm Quảng Cáo / Spam:**
+   * Không spam tin nhắn, icon, tag (mention) liên tục hoặc tag everyone/here mà không có lý do chính đáng.
+   * Không gửi link giới thiệu (referral link), link server Discord khác, hoặc quảng cáo sản phẩm/dịch vụ cá nhân khi chưa được BQL (Staff) cho phép.
+ 3. Quy Định Về Hồ Sơ Cá Nhân (Profile)
+ * **Tên hiển thị (Nickname) & Avatar:**
+   * Không đặt tên/avatar chứa từ ngữ thô tục, xúc phạm, nội dung 18+ hoặc khiêu khích.
+   * Không giả mạo thành viên Ban Quản Lý (Admin, Mod) hoặc các cá nhân/tổ chức khác.
+   * Tên không chứa quá nhiều ký tự đặc biệt gây khó khăn cho việc tag tên.
+ 4. Sử Dụng Kênh Chat & Voice
+ * **Đúng kênh - Đúng chủ đề:** Hãy nhắn tin đúng mục đích của từng kênh (Ví dụ: bàn luận game ở kênh chat game, chia sẻ ảnh ở kênh hình ảnh, dùng bot ở kênh lệnh bot).
+ * **Văn hóa Voice Chat:**
+   * Không nhảy channel voice liên tục gây rối mắt/tai cho người khác.
+ 5. An Toàn & Bảo Mật
+ * **Không chia sẻ thông tin cá nhân:** Bảo vệ bản thân bằng cách không gửi thông tin cá nhân nhạy cảm (số điện thoại, địa chỉ, tài khoản ngân hàng, thông tin đăng nhập...) lên kênh chat chung.
+ * **Tuân thủ quy định Discord:** Mọi thành viên phải tuân thủ nghiêm ngặt Điều khoản dịch vụ của Discord và Hướng dẫn cộng đồng Discord.
+ 🚨 HÌNH THỨC XỬ LÝ VI PHẠM
+Tùy vào mức độ vi phạm, Ban Quản Lý sẽ áp dụng các hình thức xử lý sau:
+ 1. **Cảnh cáo (Warning):** Áp dụng cho vi phạm nhẹ lần đầu.
+ 2. **Tắt tiếng (Mute/Timeout):** Tạm thời không thể nhắn tin hoặc vào voice trong một khoảng thời gian.
+ 3. **Đuổi khỏi server (Kick):** Rời khỏi server và có thể vào lại bằng link mời.
+ 4. **Cấm vĩnh viễn (Ban):** Bị cấm truy cập vào server vĩnh viễn đối với các vi phạm nghiêm trọng (Spam bot, gửi link độc hại, xúc phạm nặng nề...).
+> 💡 *Lưu ý: Ban Quản Lý (Mod/Admin) có quyền đưa ra quyết định cuối cùng đối với các trường hợp phát sinh chưa được liệt kê cụ thể trong nội quy.(Luật rừng)*
+> 
+Chúc bạn có những giây phút giao lưu và giải trí vui vẻ tại **Thay Trời Hành Đạo ┃ 🖤**! 🎮🎉
+ Các kênh:
+ - https://discord.com/channels/1210086628559691926/1541666627697909840: tin tức và sự kiện của server
+ - https://discord.com/channels/1210086628559691926/1386720433889480766: trò chuyện thoải mái
+ - https://discord.com/channels/1210086628559691926/1325119661628719134: liên hệ staff (nhắn DM cho bot modmail hoặc dùng lệnh /report)
+
+ Các role:
+ - administrator: quản lý server
+ - Member: được cấp sau khi xác minh
+
+ Câu hỏi thường gặp:
+ - Làm sao liên hệ admin hoặc administrator hay onwer? Nhắn tin riêng cho bot modmail.
+ - Làm sao tạo phòng voice riêng? Vào kênh "Join to Create".
+ - Bot server này có xịn không? Xịn hay không thì hãy xem lại não mình đi đã
