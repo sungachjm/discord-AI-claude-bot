@@ -9,7 +9,7 @@ const {
   MessageFlags,
 } = require('discord.js');
 
-const missing = ['TOKEN', 'ANTHROPIC_API_KEY'].filter((k) => !process.env[k]?.trim());
+const missing = ['TOKEN', 'GEMINI_API_KEY'].filter((k) => !process.env[k]?.trim());
 if (missing.length) {
   console.error(`❌ Thiếu biến môi trường: ${missing.join(', ')}`);
   process.exit(1);
@@ -30,8 +30,8 @@ const checkLimit = createLimiter({
 const MAX_HISTORY_MESSAGES = 20; // 10 lượt hỏi đáp gần nhất
 const MAX_HISTORY_CHARS = 12_000;
 const MAX_IMAGES = 3;
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']; // Gemini không đọc ảnh GIF
 const NO_PING = { parse: [], repliedUser: false }; // câu trả lời của AI không bao giờ ping ai
 
 const client = new Client({
@@ -240,4 +240,4 @@ if (process.env.PORT) {
 }
 
 client.login(TOKEN);
-  
+      
