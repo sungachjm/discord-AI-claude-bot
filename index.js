@@ -1,4 +1,5 @@
 require('dotenv').config();
+const startStatus = require('./status');
 const {
   Client,
   GatewayIntentBits,
@@ -120,7 +121,10 @@ async function respond({ key, userId, name, text, attachments, sendFirst, sendMo
   const limited = checkLimit(userId);
   if (limited) return sendFirst(limited);
 
+  const queuedAt = Date.now();
   return withLock(key, async () => {
+    const waited = Date.now() - queuedAt;
+    if (waited > 1500) console.log(`⏱ Phải đợi hàng đợi của kênh ${(waited / 1000).toFixed(1)}s`);
     try {
       const images = await loadImages(attachments);
       const userText = (isDM ? text : `${name}: ${text}`) || '(chỉ gửi ảnh)';
@@ -217,6 +221,7 @@ client.on(Events.InteractionCreate, async (i) => {
 
 client.once(Events.ClientReady, async (c) => {
   console.log(`✅ Đăng nhập: ${c.user.tag} • Model: ${MODEL}`);
+  startStatus(c); // đặt trạng thái cho bot
   if (GUILD_ID) {
     const guild = await c.guilds.fetch(GUILD_ID).catch(() => null);
     if (guild) await guild.commands.set(commands);
@@ -240,4 +245,4 @@ if (process.env.PORT) {
 }
 
 client.login(TOKEN);
-      
+          
