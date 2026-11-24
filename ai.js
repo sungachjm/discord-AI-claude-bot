@@ -65,16 +65,16 @@ async function callOnce(body) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': API_KEY },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(60_000),
+    signal: AbortSignal.timeout(30_000),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new ApiError(res.status, data?.error?.message ?? `HTTP ${res.status}`);
   return data;
 }
 
-// Thử lại tối đa 2 lần khi Gemini báo lỗi máy chủ (5xx) hoặc mạng chập chờn
+// Thử lại 1 lần khi Gemini báo lỗi máy chủ (5xx) hoặc mạng chập chờn
 async function callGemini(body) {
-  const waits = [1000, 3000];
+  const waits = [1000];
   for (let attempt = 0; ; attempt++) {
     try {
       return await callOnce(body);
@@ -82,6 +82,7 @@ async function callGemini(body) {
       const retryable =
         err instanceof ApiError ? err.status >= 500 : ['TimeoutError', 'TypeError'].includes(err.name);
       if (!retryable || attempt >= waits.length) throw err;
+      console.warn(`⚠️ Gemini lỗi (${err.status ?? err.name}), thử lại sau ${waits[attempt] / 1000}s...`);
       await new Promise((resolve) => setTimeout(resolve, waits[attempt]));
     }
   }
@@ -98,6 +99,7 @@ async function ask({ history = [], text, images = [] }) {
     { text },
   ];
 
+  const t0 = Date.now();
   const data = await callGemini({
     systemInstruction: { parts: [{ text: buildSystem() }] },
     contents: [
@@ -110,6 +112,7 @@ async function ask({ history = [], text, images = [] }) {
     generationConfig: { maxOutputTokens: MAX_TOKENS },
   });
 
+  console.log(`⏱ Gemini (${MODEL}) trả lời sau ${((Date.now() - t0) / 1000).toFixed(1)}s`);
   const candidate = data.candidates?.[0];
   const reply = (candidate?.content?.parts ?? [])
     .filter((p) => typeof p.text === 'string' && !p.thought)
@@ -141,4 +144,4 @@ function friendlyError(err) {
 }
 
 module.exports = { ask, friendlyError, MODEL };
-    
+  
