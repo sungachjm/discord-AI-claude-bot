@@ -8,11 +8,11 @@ const MAX_TOKENS = Number(process.env.AI_MAX_TOKENS) || 2048;
 const endpoint = (model) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
 
-// Tính cách của bot: sửa trong file persona.txt (dòng bắt đầu bằng # là ghi chú)
-function loadPersona() {
+// Đọc file văn bản trong thư mục bot (bỏ các dòng bắt đầu bằng # là ghi chú)
+function readTextFile(name) {
   try {
     return fs
-      .readFileSync(path.join(__dirname, 'persona.txt'), 'utf8')
+      .readFileSync(path.join(__dirname, name), 'utf8')
       .split(/\r?\n/)
       .filter((line) => !line.trim().startsWith('#'))
       .join('\n')
@@ -21,16 +21,27 @@ function loadPersona() {
     return '';
   }
 }
+
+// Tính cách của bot: sửa trong persona.txt. Thông tin về server: sửa trong server-info.txt
 const PERSONA =
-  loadPersona() || 'Bạn là một trợ lý AI thân thiện, trả lời bằng tiếng Việt, ngắn gọn và dễ hiểu.';
+  readTextFile('persona.txt') || 'Bạn là một trợ lý AI thân thiện, trả lời bằng tiếng Việt, ngắn gọn và dễ hiểu.';
+const SERVER_INFO = readTextFile('server-info.txt').slice(0, 8000);
 
 function buildSystem() {
   const today = new Date().toLocaleDateString('vi-VN', {
     dateStyle: 'full',
     timeZone: 'Asia/Ho_Chi_Minh',
   });
+  const serverInfo = SERVER_INFO
+    ? [
+        '',
+        'Thông tin về server này (chỉ dùng để trả lời câu hỏi liên quan đến server; nếu thông tin không có ở đây thì nói là không chắc và gợi ý hỏi staff, tuyệt đối đừng bịa):',
+        SERVER_INFO,
+      ]
+    : [];
   return [
     PERSONA,
+    ...serverInfo,
     '',
     'Quy tắc cố định:',
     '- Trả lời bằng ngôn ngữ mà người dùng đang dùng.',
@@ -130,3 +141,4 @@ function friendlyError(err) {
 }
 
 module.exports = { ask, friendlyError, MODEL };
+    
