@@ -1,16 +1,12 @@
 const fs = require('fs');
 const path = require('path');
-const AnthropicSDK = require('@anthropic-ai/sdk');
 
-const Anthropic = AnthropicSDK.default ?? AnthropicSDK;
-
-const MODEL = process.env.AI_MODEL || 'claude-haiku-5-5';
-const MAX_TOKENS = Number(process.env.AI_MAX_TOKENS) || 1024;
-
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-  timeout: 60_000,
-});
+// Gọi thẳng REST API của Gemini bằng fetch (Node 18+), không cần cài thư viện
+const API_KEY = process.env.GEMINI_API_KEY;
+const MODEL = process.env.AI_MODEL || 'gemini-3.1-flash-lite';
+const MAX_TOKENS = Number(process.env.AI_MAX_TOKENS) || 2048;
+const endpoint = (model) =>
+  `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
 
 // Tính cách của bot: sửa trong file persona.txt (dòng bắt đầu bằng # là ghi chú)
 function loadPersona() {
@@ -46,47 +42,91 @@ function buildSystem() {
   ].join('\n');
 }
 
+class ApiError extends Error {
+  constructor(status, message) {
+    super(message);
+    this.status = status;
+  }
+}
+
+async function callOnce(body) {
+  const res = await fetch(endpoint(MODEL), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': API_KEY },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(60_000),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new ApiError(res.status, data?.error?.message ?? `HTTP ${res.status}`);
+  return data;
+}
+
+// Thử lại tối đa 2 lần khi Gemini báo lỗi máy chủ (5xx) hoặc mạng chập chờn
+async function callGemini(body) {
+  const waits = [1000, 3000];
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await callOnce(body);
+    } catch (err) {
+      const retryable =
+        err instanceof ApiError ? err.status >= 500 : ['TimeoutError', 'TypeError'].includes(err.name);
+      if (!retryable || attempt >= waits.length) throw err;
+      await new Promise((resolve) => setTimeout(resolve, waits[attempt]));
+    }
+  }
+}
+
 /**
- * Hỏi Claude.
+ * Hỏi Gemini.
  * history: mảng { role: 'user' | 'assistant', content: string } đã diễn ra trước đó
  * images: mảng { mediaType, data (base64) }
  */
 async function ask({ history = [], text, images = [] }) {
-  const content = [
-    // Ảnh đặt trước chữ để Claude hiểu tốt hơn
-    ...images.map((img) => ({
-      type: 'image',
-      source: { type: 'base64', media_type: img.mediaType, data: img.data },
-    })),
-    { type: 'text', text },
+  const parts = [
+    ...images.map((img) => ({ inlineData: { mimeType: img.mediaType, data: img.data } })),
+    { text },
   ];
 
-  const res = await client.messages.create({
-    model: MODEL,
-    max_tokens: MAX_TOKENS,
-    system: buildSystem(),
-    messages: [...history, { role: 'user', content }],
+  const data = await callGemini({
+    systemInstruction: { parts: [{ text: buildSystem() }] },
+    contents: [
+      ...history.map((m) => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }],
+      })),
+      { role: 'user', parts },
+    ],
+    generationConfig: { maxOutputTokens: MAX_TOKENS },
   });
 
-  const reply = res.content
-    .filter((block) => block.type === 'text')
-    .map((block) => block.text)
-    .join('\n')
+  const candidate = data.candidates?.[0];
+  const reply = (candidate?.content?.parts ?? [])
+    .filter((p) => typeof p.text === 'string' && !p.thought)
+    .map((p) => p.text)
+    .join('')
     .trim();
 
-  return reply || '(Mình chưa nghĩ ra câu trả lời, bạn thử hỏi lại nhé.)';
+  if (reply) return reply;
+  if (data.promptFeedback?.blockReason || candidate?.finishReason === 'SAFETY') {
+    throw new ApiError(0, 'BLOCKED');
+  }
+  throw new ApiError(0, 'EMPTY');
 }
 
 // Đổi lỗi kỹ thuật thành câu dễ hiểu cho người dùng
 function friendlyError(err) {
   const msg = String(err?.message ?? '');
-  if (err?.status === 401) return '❌ Bot chưa cấu hình đúng API key, hãy báo admin.';
-  if (/credit balance/i.test(msg)) return '❌ Tài khoản API đã hết credit, hãy báo admin.';
-  if (err?.status === 429) return '⏳ AI đang bị giới hạn lượt dùng, thử lại sau ít phút nhé.';
-  if (err?.status >= 500 || err?.status === 529) return '⏳ AI đang quá tải, thử lại sau nhé.';
-  if (err?.status === 400) return '❌ Yêu cầu không hợp lệ (có thể ảnh quá lớn hoặc sai định dạng).';
+  if (msg === 'BLOCKED') return '🙅 AI từ chối trả lời nội dung này, bạn thử hỏi cách khác nhé.';
+  if (msg === 'EMPTY') return 'Mình chưa nghĩ ra câu trả lời, bạn thử hỏi lại nhé.';
+  if (/API key not valid|API_KEY_INVALID/i.test(msg) || err?.status === 401) {
+    return '❌ Bot chưa cấu hình đúng API key Gemini, hãy báo admin.';
+  }
+  if (err?.status === 403) return '❌ API key không có quyền dùng Gemini hoặc bị chặn, hãy báo admin.';
+  if (err?.status === 404) return '❌ Tên model AI không đúng hoặc đã ngừng hỗ trợ, hãy báo admin đổi AI_MODEL.';
+  if (err?.status === 429) return '⏳ AI đang hết lượt dùng tạm thời, thử lại sau ít phút nhé.';
+  if (err?.status >= 500) return '⏳ AI đang quá tải, thử lại sau nhé.';
+  if (err?.status === 400) return '❌ Yêu cầu không hợp lệ (có thể ảnh sai định dạng hoặc quá lớn).';
   return '❌ Có lỗi xảy ra khi gọi AI, thử lại sau nhé.';
 }
 
 module.exports = { ask, friendlyError, MODEL };
-               
