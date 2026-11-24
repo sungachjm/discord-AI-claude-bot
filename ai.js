@@ -5,6 +5,11 @@ const path = require('path');
 const API_KEY = process.env.GEMINI_API_KEY;
 const MODEL = process.env.AI_MODEL || 'gemini-3.1-flash-lite';
 const MAX_TOKENS = Number(process.env.AI_MAX_TOKENS) || 2048;
+// Model dự phòng: nếu model chính bị quá tải (503), hết lượt (429) hoặc sai tên (404) thì tự chuyển sang model kế tiếp
+const FALLBACKS = (process.env.AI_FALLBACK_MODELS ?? 'gemini-2.5-flash-lite,gemini-2.5-flash')
+  .split(/[,\s]+/)
+  .filter(Boolean);
+const MODELS = [...new Set([MODEL, ...FALLBACKS])];
 const endpoint = (model) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
 
@@ -60,32 +65,37 @@ class ApiError extends Error {
   }
 }
 
-async function callOnce(body) {
-  const res = await fetch(endpoint(MODEL), {
+async function callOnce(model, body) {
+  const res = await fetch(endpoint(model), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': API_KEY },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(30_000),
+    signal: AbortSignal.timeout(25_000),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new ApiError(res.status, data?.error?.message ?? `HTTP ${res.status}`);
   return data;
 }
 
-// Thử lại 1 lần khi Gemini báo lỗi máy chủ (5xx) hoặc mạng chập chờn
+// Gọi lần lượt từng model cho đến khi có model trả lời được
 async function callGemini(body) {
-  const waits = [1000];
-  for (let attempt = 0; ; attempt++) {
+  let lastErr;
+  for (let i = 0; i < MODELS.length; i++) {
+    const model = MODELS[i];
     try {
-      return await callOnce(body);
+      return { data: await callOnce(model, body), model };
     } catch (err) {
-      const retryable =
-        err instanceof ApiError ? err.status >= 500 : ['TimeoutError', 'TypeError'].includes(err.name);
-      if (!retryable || attempt >= waits.length) throw err;
-      console.warn(`⚠️ Gemini lỗi (${err.status ?? err.name}), thử lại sau ${waits[attempt] / 1000}s...`);
-      await new Promise((resolve) => setTimeout(resolve, waits[attempt]));
+      lastErr = err;
+      const switchable =
+        err instanceof ApiError
+          ? err.status === 404 || err.status === 429 || err.status >= 500
+          : ['TimeoutError', 'TypeError'].includes(err.name);
+      if (!switchable) throw err; // lỗi key, lỗi yêu cầu: đổi model cũng không giúp được
+      const next = MODELS[i + 1];
+      console.warn(`⚠️ Model ${model} lỗi (${err.status ?? err.name})${next ? `, chuyển sang ${next}` : ''}`);
     }
   }
+  throw lastErr;
 }
 
 /**
@@ -100,7 +110,7 @@ async function ask({ history = [], text, images = [] }) {
   ];
 
   const t0 = Date.now();
-  const data = await callGemini({
+  const { data, model } = await callGemini({
     systemInstruction: { parts: [{ text: buildSystem() }] },
     contents: [
       ...history.map((m) => ({
@@ -112,7 +122,7 @@ async function ask({ history = [], text, images = [] }) {
     generationConfig: { maxOutputTokens: MAX_TOKENS },
   });
 
-  console.log(`⏱ Gemini (${MODEL}) trả lời sau ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+  console.log(`⏱ Gemini (${model}) trả lời sau ${((Date.now() - t0) / 1000).toFixed(1)}s`);
   const candidate = data.candidates?.[0];
   const reply = (candidate?.content?.parts ?? [])
     .filter((p) => typeof p.text === 'string' && !p.thought)
@@ -144,4 +154,4 @@ function friendlyError(err) {
 }
 
 module.exports = { ask, friendlyError, MODEL };
-  
+                    
